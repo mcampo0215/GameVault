@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>My Vault - GameVault</title>
+    <link rel="stylesheet" href="styles/style.css" />
+    <link rel="stylesheet" href="styles/vault.css" />
+  </head>
+  <body>
+    <header class="navbar">
+      <div class="nav-brand"><h1>🎮 GameVault</h1></div>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="login.html">Account</a>
+        <a id="nav-auth-link" href="login.html">Login / Signup</a>
+        <span id="nav-user" class="nav-user" hidden>
+          <span id="nav-avatar" class="nav-avatar" title=""></span>
+          <button id="nav-logout" class="btn btn-ghost tiny-btn">Logout</button>
+        </span>
+      </div>
+    </header>
+
+    <main class="section centered">
+      <div class="auth-page" style="max-width: 1100px">
+        <!-- Page heading moved into the vault header to avoid duplication -->
+
+        <div class="vault-search">
+          <div class="vault-header-row">
+            <div class="vault-title">
+              <h2>My Vault</h2>
+              <p class="vault-sub">
+                Search games and add them to your vault with status, rating,
+                comment and hours played.
+              </p>
+            </div>
+            <div class="vault-actions">
+              <button
+                id="vault-add-btn"
+                class="btn btn-add icon"
+                aria-label="Add a game"
+                title="Add a game"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12 5v14"
+                    stroke="white"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M5 12h14"
+                    stroke="white"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Modal-style add panel -->
+          <div id="vault-add-panel" class="vault-add-panel">
+            <div class="vault-add-backdrop"></div>
+            <div class="vault-add-card">
+              <div class="vault-add-controls">
+                <input
+                  id="vault-add-search"
+                  type="search"
+                  placeholder="Search games to add (Elden Ring, Baldur's Gate...)"
+                />
+                <button id="vault-add-search-btn" class="btn">Search</button>
+                <button id="vault-add-close" class="btn btn-ghost">
+                  Close
+                </button>
+              </div>
+              <div id="vault-add-results" class="vault-add-results"></div>
+            </div>
+          </div>
+          <!-- Modal-style edit panel -->
+          <div id="vault-edit-panel" class="vault-add-panel">
+            <div class="vault-add-backdrop"></div>
+            <div class="vault-add-card">
+              <div class="vault-add-controls">
+                <h3 id="vault-edit-title">Edit Vault Entry</h3>
+                <select id="vault-edit-status" class="small-select">
+                  <option value="playing">Playing</option>
+                  <option value="completed">Completed</option>
+                  <option value="dropped">Dropped</option>
+                </select>
+                <input
+                  id="vault-edit-hours"
+                  type="number"
+                  min="0"
+                  placeholder="Hours played"
+                />
+                <input
+                  id="vault-edit-rating"
+                  type="number"
+                  min="1"
+                  max="5"
+                  placeholder="Rating (1-5)"
+                />
+                <input
+                  id="vault-edit-comment"
+                  type="text"
+                  placeholder="Optional comment"
+                />
+                <div style="display: flex; gap: 8px; margin-top: 8px">
+                  <button id="vault-edit-save" class="btn">Save</button>
+                  <button id="vault-edit-close" class="btn btn-ghost">
+                    Close
+                  </button>
+                </div>
+              </div>
+              <div id="vault-edit-preview" class="vault-add-results"></div>
+            </div>
+          </div>
+        </div>
+
+        <hr style="margin: 1rem 0" />
+
+        <h3>Your Vault</h3>
+        <div id="vault-list" class="user-games-grid">
+          <div class="loading">Loading your vault...</div>
+        </div>
+      </div>
+    </main>
+
+    <script src="scripts/app.js"></script>
+  </body>
+</html>

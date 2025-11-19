@@ -15,8 +15,14 @@
         <div class="nav-links">
           <a href="#dashboard">Dashboard</a>
           <a href="#games">Games</a>
-          <a href="#users">Users</a>
           <a href="#user-games">Collections</a>
+          <a id="nav-auth-link" href="login.html">Login / Signup</a>
+          <span id="nav-user" class="nav-user" hidden>
+            <span id="nav-avatar" class="nav-avatar" title=""></span>
+            <button id="nav-logout" class="btn btn-ghost tiny-btn">
+              Logout
+            </button>
+          </span>
         </div>
       </nav>
     </header>
@@ -63,24 +69,26 @@
         </div>
       </section>
 
-      <!-- Users Section -->
-      <section id="users" class="section">
-        <h2>Users</h2>
-        <div id="users-list" class="users-grid">
-          <div class="loading">Loading users...</div>
-        </div>
-      </section>
+      <!-- Users Section removed (moved to separate login/search page) -->
 
       <!-- User Games Section -->
       <section id="user-games" class="section">
         <h2>User Game Collections</h2>
-        <select id="user-select" class="user-select">
-          <option value="">Select a user...</option>
-        </select>
+        <div class="user-lookup">
+          <input
+            id="user-lookup-input"
+            placeholder="Enter username to view their vault"
+          />
+          <button id="user-lookup-button">Search</button>
+        </div>
         <div id="user-games-list" class="user-games-grid">
-          <div class="loading">Select a user to view their collection</div>
+          <div class="loading">Search for a user to view their collection</div>
         </div>
       </section>
+
+      <!-- Auth moved to separate login.html -->
+
+      <!-- My Vault moved to separate page: frontend/my-vault.html -->
     </main>
 
     <!-- Game Modal -->

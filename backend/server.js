@@ -3,6 +3,9 @@ import express from 'express';
 import mysql from 'mysql2/promise';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import axios from 'axios';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
@@ -21,6 +24,8 @@ async function connectDatabase() {
             database: process.env.DB_NAME
         });
         console.log('✅ Connected to MySQL database');
+        // Ensure schema has required auth/vault columns
+        await ensureSchemaMigrations();
     } catch (error) {
         console.error('❌ Database connection failed:', error.message);
         console.log('💡 Make sure:');
@@ -31,12 +36,71 @@ async function connectDatabase() {
     }
 }
 
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_gamevault_key';
+
+async function ensureSchemaMigrations() {
+    try {
+        // Add password_hash column to vault_user if it doesn't exist
+        const [cols] = await db.execute(`
+            SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'vault_user' AND COLUMN_NAME = 'password_hash'
+        `, [process.env.DB_NAME]);
+
+        if (cols.length === 0) {
+            console.log('🛠️ Adding password_hash column to vault_user');
+            await db.execute(`ALTER TABLE vault_user ADD COLUMN password_hash VARCHAR(255) NULL`);
+        }
+
+        // Add rating and comment columns to user_game if missing
+        const [gameCols] = await db.execute(`
+            SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'user_game' AND COLUMN_NAME IN ('rating','comment')
+        `, [process.env.DB_NAME]);
+
+        const existing = gameCols.map(c => c.COLUMN_NAME);
+        if (!existing.includes('rating')) {
+            console.log('🛠️ Adding rating column to user_game');
+            await db.execute(`ALTER TABLE user_game ADD COLUMN rating INT NULL`);
+        }
+        if (!existing.includes('comment')) {
+            console.log('🛠️ Adding comment column to user_game');
+            await db.execute(`ALTER TABLE user_game ADD COLUMN comment TEXT NULL`);
+        }
+        // Add background_image column to game table if missing
+        const [gameCols2] = await db.execute(`
+            SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'game' AND COLUMN_NAME = 'background_image'
+        `, [process.env.DB_NAME]);
+        if (gameCols2.length === 0) {
+            console.log('🛠️ Adding background_image column to game');
+            await db.execute(`ALTER TABLE game ADD COLUMN background_image VARCHAR(512) NULL`);
+        }
+    } catch (err) {
+        console.error('Error running schema migrations:', err.message);
+    }
+}
+
+// Auth middleware
+function authenticate(req, res, next) {
+    const auth = req.headers.authorization;
+    if (!auth || !auth.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    const token = auth.split(' ')[1];
+    try {
+        const payload = jwt.verify(token, JWT_SECRET);
+        req.user = payload;
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: 'Invalid token' });
+    }
+}
+
 // API Routes
 app.get('/api/games', async (req, res) => {
     try {
         const [games] = await db.execute(`
             SELECT 
                 g.game_id,
+                g.background_image,
                 g.title,
                 g.rating,
                 g.release_date,
@@ -75,6 +139,111 @@ app.get('/api/users', async (req, res) => {
         res.json(users);
     } catch (error) {
         console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Search users by username (for autocomplete/search box)
+app.get('/api/users/search', async (req, res) => {
+    try {
+        const { username } = req.query;
+        if (!username) return res.status(400).json({ error: 'username query param required' });
+
+        const [users] = await db.execute(
+            `SELECT user_id, username FROM vault_user WHERE username LIKE ? ORDER BY username LIMIT 50`,
+            [`%${username}%`]
+        );
+
+        res.json(users);
+    } catch (error) {
+        console.error('Error searching users:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Signup
+app.post('/api/signup', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) return res.status(400).json({ error: 'username and password required' });
+
+        // Check existing
+        const [existing] = await db.execute(`SELECT user_id FROM vault_user WHERE username = ?`, [username]);
+        if (existing.length > 0) return res.status(400).json({ error: 'Username already taken' });
+
+        const hashed = await bcrypt.hash(password, 10);
+        const [result] = await db.execute(`INSERT INTO vault_user (username, password_hash) VALUES (?, ?)`, [username, hashed]);
+        const userId = result.insertId;
+        const token = jwt.sign({ user_id: userId, username }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ token, user: { user_id: userId, username } });
+    } catch (err) {
+        console.error('Signup error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Login
+app.post('/api/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) return res.status(400).json({ error: 'username and password required' });
+
+        const [rows] = await db.execute(`SELECT user_id, username, password_hash FROM vault_user WHERE username = ?`, [username]);
+        if (rows.length === 0) return res.status(400).json({ error: 'Invalid credentials' });
+
+        const user = rows[0];
+        if (!user.password_hash) return res.status(400).json({ error: 'This account has no password set' });
+
+        const ok = await bcrypt.compare(password, user.password_hash);
+        if (!ok) return res.status(400).json({ error: 'Invalid credentials' });
+
+        const token = jwt.sign({ user_id: user.user_id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ token, user: { user_id: user.user_id, username: user.username } });
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get user's vault by user id (public)
+app.get('/api/users/:id/vault', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [rows] = await db.execute(`
+            SELECT ug.game_id, g.title, g.background_image, ug.game_status, ug.hours_played, ug.rating, ug.comment
+            FROM user_game ug
+            JOIN game g ON ug.game_id = g.game_id
+            WHERE ug.user_id = ?
+            ORDER BY ug.hours_played DESC
+        `, [id]);
+        res.json(rows);
+    } catch (err) {
+        console.error('Error fetching user vault:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Add or update an entry in the authenticated user's vault
+app.post('/api/me/vault', authenticate, async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const { game_id, game_status, hours_played, rating, comment } = req.body;
+        if (!game_id) return res.status(400).json({ error: 'game_id is required' });
+
+        // Upsert into user_game
+        await db.execute(`
+            INSERT INTO user_game (user_id, game_id, game_status, hours_played, rating, comment)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                game_status = VALUES(game_status),
+                hours_played = VALUES(hours_played),
+                rating = VALUES(rating),
+                comment = VALUES(comment)
+        `, [userId, game_id, game_status || null, hours_played || 0, rating || null, comment || null]);
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error updating vault entry:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -204,16 +373,29 @@ app.post('/api/games/add-from-rawg', async (req, res) => {
         );
 
         if (existingGame.length > 0) {
-            return res.status(400).json({ 
-                error: 'Game already exists in database',
-                gameId: existingGame[0].game_id
+            const existingId = existingGame[0].game_id;
+            // If existing record lacks a background_image, and RAWG provides one, update it
+            const backgroundImage = game.background_image || game.background_image_additional || null;
+            if (backgroundImage) {
+                try {
+                    await db.execute(`UPDATE game SET background_image = ? WHERE game_id = ? AND (background_image IS NULL OR background_image = '')`, [backgroundImage, existingId]);
+                } catch (uerr) {
+                    console.warn('Could not update existing game background_image', uerr.message);
+                }
+            }
+            // Return success with existing gameId so client can continue
+            return res.json({
+                success: true,
+                message: 'Game already exists',
+                gameId: existingId
             });
         }
 
-        // Insert into your database
+        // Insert into your database (include background image if available)
+        const backgroundImage = game.background_image || game.background_image_additional || null;
         const [result] = await db.execute(
-            `INSERT INTO game (title, rating, release_date) VALUES (?, ?, ?)`,
-            [game.name, game.rating, game.released]
+            `INSERT INTO game (title, rating, release_date, background_image) VALUES (?, ?, ?, ?)`,
+            [game.name, game.rating, game.released, backgroundImage]
         );
         
         const gameId = result.insertId;
