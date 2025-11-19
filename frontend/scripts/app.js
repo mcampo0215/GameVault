@@ -216,3 +216,143 @@ function openGameModal(gameId) {
 function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString();
 }
+
+// Search functionality
+document.addEventListener('DOMContentLoaded', () => {
+    // ... your existing code ...
+    
+    // Add search event listeners
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    
+    searchButton.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+});
+
+async function performSearch() {
+    const searchInput = document.getElementById('search-input');
+    const query = searchInput.value.trim();
+    
+    if (!query) {
+        alert('Please enter a game name to search');
+        return;
+    }
+    
+    const resultsContainer = document.getElementById('search-results');
+    resultsContainer.innerHTML = '<div class="loading-spinner">🔍 Searching games...</div>';
+    
+    try {
+        const response = await fetch(`${API_BASE}/rawg/search?query=${encodeURIComponent(query)}`);
+        if (!response.ok) throw new Error('Search failed');
+        
+        const games = await response.json();
+        displaySearchResults(games);
+    } catch (error) {
+        console.error('Error searching games:', error);
+        resultsContainer.innerHTML = `
+            <div class="search-error">
+                ❌ Failed to search games. Please try again.
+            </div>
+        `;
+    }
+}
+
+function displaySearchResults(games) {
+    const resultsContainer = document.getElementById('search-results');
+    
+    if (games.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="search-placeholder">
+                🎮 No games found. Try a different search term.
+            </div>
+        `;
+        return;
+    }
+    
+    resultsContainer.innerHTML = games.map(game => `
+        <div class="search-result-card">
+            ${game.background_image ? `
+                <img src="${game.background_image}" alt="${game.name}" class="search-result-image">
+            ` : `
+                <div class="search-result-image" style="background: var(--gray); display: flex; align-items: center; justify-content: center; color: var(--text-light);">
+                    🎮
+                </div>
+            `}
+            <div class="search-result-content">
+                <h4>${game.name}</h4>
+                <div class="search-result-meta">
+                    ${game.released ? `<span>📅 ${new Date(game.released).getFullYear()}</span>` : ''}
+                    ${game.rating ? `<span>⭐ ${game.rating}/5</span>` : ''}
+                </div>
+                ${game.genres.length > 0 ? `
+                    <div class="search-result-genres">
+                        ${game.genres.map(genre => `<span class="genre-tag">${genre}</span>`).join('')}
+                    </div>
+                ` : ''}
+                ${game.platforms.length > 0 ? `
+                    <div style="font-size: 0.9rem; color: var(--text-light);">
+                        🖥️ ${game.platforms.slice(0, 3).join(', ')}${game.platforms.length > 3 ? '...' : ''}
+                    </div>
+                ` : ''}
+                <button class="add-game-button" onclick="addGameToDatabase(${game.id}, this)">
+                    ➕ Add to GameVault
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function addGameToDatabase(rawgId, button) {
+    // Disable button and show loading
+    button.disabled = true;
+    button.textContent = 'Adding...';
+    
+    try {
+        const response = await fetch(`${API_BASE}/games/add-from-rawg`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ rawgId })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            button.textContent = '✅ Added!';
+            button.style.background = 'linear-gradient(135deg, #51cf66, #2ecc71)';
+            
+            // Refresh the games list after a short delay
+            setTimeout(() => {
+                loadGames();
+                loadDashboard();
+            }, 1000);
+            
+        } else {
+            button.textContent = '❌ Failed';
+            button.style.background = 'linear-gradient(135deg, #ff8787, #e74c3c)';
+            setTimeout(() => {
+                button.textContent = '➕ Add to GameVault';
+                button.style.background = '';
+                button.disabled = false;
+            }, 2000);
+            
+            if (result.error === 'Game already exists in database') {
+                alert('This game is already in your GameVault!');
+            }
+        }
+    } catch (error) {
+        console.error('Error adding game:', error);
+        button.textContent = '❌ Error';
+        button.style.background = 'linear-gradient(135deg, #ff8787, #e74c3c)';
+        setTimeout(() => {
+            button.textContent = '➕ Add to GameVault';
+            button.style.background = '';
+            button.disabled = false;
+        }, 2000);
+    }
+}

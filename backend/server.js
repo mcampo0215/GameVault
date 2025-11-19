@@ -146,5 +146,140 @@ async function startServer() {
         console.log(`   GET /api/user/:id/games - User's game collection`);
     });
 }
+// Search games from RAWG API
+app.get('/api/rawg/search', async (req, res) => {
+    try {
+        const { query } = req.query;
+        if (!query) {
+            return res.status(400).json({ error: 'Query parameter is required' });
+        }
 
+        console.log(`Searching RAWG for: ${query}`);
+        
+        const response = await axios.get(
+            `https://api.rawg.io/api/games?key=${process.env.RAWG_API_KEY}&search=${encodeURIComponent(query)}&page_size=20`
+        );
+        
+        const games = response.data.results.map(game => ({
+            id: game.id,
+            name: game.name,
+            released: game.released,
+            rating: game.rating,
+            background_image: game.background_image,
+            genres: game.genres.map(g => g.name),
+            platforms: game.platforms.map(p => p.platform.name)
+        }));
+        
+        console.log(`Found ${games.length} games for "${query}"`);
+        res.json(games);
+    } catch (error) {
+        console.error('Error searching RAWG:', error);
+        res.status(500).json({ error: 'Failed to search games' });
+    }
+});
+
+// Add game from RAWG to your database
+app.post('/api/games/add-from-rawg', async (req, res) => {
+    try {
+        const { rawgId } = req.body;
+        
+        if (!rawgId) {
+            return res.status(400).json({ error: 'rawgId is required' });
+        }
+
+        console.log(`Adding game from RAWG ID: ${rawgId}`);
+        
+        // Get detailed game info from RAWG
+        const response = await axios.get(
+            `https://api.rawg.io/api/games/${rawgId}?key=${process.env.RAWG_API_KEY}`
+        );
+        
+        const game = response.data;
+        console.log(`Adding game: ${game.name}`);
+
+        // Check if game already exists
+        const [existingGame] = await db.execute(
+            `SELECT game_id FROM game WHERE title = ?`,
+            [game.name]
+        );
+
+        if (existingGame.length > 0) {
+            return res.status(400).json({ 
+                error: 'Game already exists in database',
+                gameId: existingGame[0].game_id
+            });
+        }
+
+        // Insert into your database
+        const [result] = await db.execute(
+            `INSERT INTO game (title, rating, release_date) VALUES (?, ?, ?)`,
+            [game.name, game.rating, game.released]
+        );
+        
+        const gameId = result.insertId;
+        console.log(`Created game with ID: ${gameId}`);
+
+        // Add genres
+        for (const genre of game.genres) {
+            // Check if genre exists, if not create it
+            let [genreResult] = await db.execute(
+                `SELECT genre_id FROM genre WHERE genre_name = ?`,
+                [genre.name]
+            );
+            
+            let genreId;
+            if (genreResult.length === 0) {
+                [genreResult] = await db.execute(
+                    `INSERT INTO genre (genre_name) VALUES (?)`,
+                    [genre.name]
+                );
+                genreId = genreResult.insertId;
+                console.log(`Created new genre: ${genre.name} (ID: ${genreId})`);
+            } else {
+                genreId = genreResult[0].genre_id;
+            }
+            
+            await db.execute(
+                `INSERT INTO game_genre (game_id, genre_id) VALUES (?, ?)`,
+                [gameId, genreId]
+            );
+        }
+
+        // Add platforms
+        for (const platform of game.platforms) {
+            // Check if platform exists, if not create it
+            let [platformResult] = await db.execute(
+                `SELECT platform_id FROM platform WHERE platform_name = ?`,
+                [platform.platform.name]
+            );
+            
+            let platformId;
+            if (platformResult.length === 0) {
+                [platformResult] = await db.execute(
+                    `INSERT INTO platform (platform_name) VALUES (?)`,
+                    [platform.platform.name]
+                );
+                platformId = platformResult.insertId;
+                console.log(`Created new platform: ${platform.platform.name} (ID: ${platformId})`);
+            } else {
+                platformId = platformResult[0].platform_id;
+            }
+            
+            await db.execute(
+                `INSERT INTO game_platform (game_id, platform_id) VALUES (?, ?)`,
+                [gameId, platformId]
+            );
+        }
+        
+        res.json({ 
+            success: true, 
+            message: `"${game.name}" added successfully to GameVault!`,
+            gameId: gameId
+        });
+        
+    } catch (error) {
+        console.error('Error adding game:', error);
+        res.status(500).json({ error: 'Failed to add game to database' });
+    }
+});
 startServer().catch(console.error);
