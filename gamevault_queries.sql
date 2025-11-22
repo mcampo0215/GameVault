@@ -23,9 +23,35 @@ WHERE rating > (
     FROM game);
 
 -- show all user information along with games played
-SELECT vu.user_id, vu.username, g.title
-FROM vault_user vu
-LEFT JOIN user_game ug
-	ON vu.user_id = ug.user_id
-LEFT JOIN game g
-	on ug.game_id = g.game_id;
+SELECT vault_user.user_id, vault_user.username, game.title
+FROM vault_user
+INNER JOIN user_game ON vault_user.user_id = user_game.user_id
+INNER JOIN game ON user_game.game_id = game.game_id;
+
+-- show all games along with their respective genres
+SELECT game.game_id, game.title, GROUP_CONCAT(genre.genre_name ORDER BY genre.genre_name separator ', ') AS my_genre
+FROM game
+INNER JOIN game_genre ON game.game_id = game_genre.game_id
+INNER JOIN genre ON game_genre.genre_id = genre.genre_id
+GROUP BY game.game_id, game.title;
+
+-- add a new column called price into the game table
+ALTER TABLE game
+ADD price DECIMAL(5, 2);
+
+-- change the value of Grand Theft Auto V to $60.00
+UPDATE game
+SET price = 60.00
+WHERE title = 'Grand Theft Auto V';
+
+-- drop the previously added column
+ALTER TABLE game
+DROP COLUMN price;
+
+-- change the game status of Grand Theft Auto V for user 1 to complete
+UPDATE user_game
+SET game_status = 'Complete'
+WHERE game_id = (SELECT game_id FROM game
+				 WHERE title = 'Grand Theft Auto V')
+AND user_id = 1;
+
