@@ -54,4 +54,3 @@ SET game_status = 'Complete'
 WHERE game_id = (SELECT game_id FROM game
 				 WHERE title = 'Grand Theft Auto V')
 AND user_id = 1;
-
