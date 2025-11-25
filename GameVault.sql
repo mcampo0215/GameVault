@@ -124,7 +124,14 @@ INSERT INTO vault_user (username) VALUES
 ('RetroFury'),
 ('Thelunatic_2000'),
 ('EmberKnight'),
-('ZeroSpecter');
+('ZeroSpecter'),
+('NeonPhantom'),
+('CrimsonByte'),
+('FrostedNebula'),
+('IronPulse'),
+('MidnightNova'),
+('ByteRogue'),
+('StaticReaper');
 
 -- insert values into genre table
 INSERT INTO genre (genre_name) VALUES
@@ -146,7 +153,8 @@ INSERT INTO genre (genre_name) VALUES
 ('Family'),
 ('Board Games'),
 ('Card'),
-('Educational');
+('Educational'),
+('Horror');
 
 -- insert values into platform table
 INSERT INTO platform (platform_name) VALUES
@@ -159,7 +167,17 @@ INSERT INTO platform (platform_name) VALUES
 ('PlayStation 3'),
 ('Xbox 360'),
 ('Linux'),
-('macOS');
+('macOS'),
+('Nintendo Wii'),
+('Nintendo Wii U'),
+('Nintendo 3DS'),
+('Nintendo DS'),
+('Playstation 2'),
+('Playstation Vita'),
+('PSP'),
+('iOS'),
+('Android'),
+('Google Stadia');
 
 -- insert values into developers table
 INSERT INTO developers (developers_name) VALUES
@@ -650,3 +668,88 @@ INSERT INTO game_publishers VALUES
 (30, 20),
 (30, 13);
 
+-- Process For Database
+
+-- 1. A new user wants to sign up
+INSERT INTO vault_user (username) VALUES
+('VERIFIEDCLXMPZZ');
+
+-- 2. The user wants to find games with a rating greater than 4
+SELECT game_id, title, rating FROM game
+WHERE rating > 4.0
+ORDER BY game_id;
+
+-- 3. The user wants to add a game to their game library
+INSERT INTO user_game (user_id, game_id, game_status, hours_played) VALUES
+(21, 5, 'Backlog', 0);
+
+-- 4. The user starts playing the game
+UPDATE user_game 
+SET game_status = 'In Progress',
+    hours_played = hours_played + 10
+WHERE
+    user_id = 21 AND game_id = 5;
+    
+-- 5. Show game history for one of the users
+SELECT vault_user.user_id, vault_user.username, game.title
+FROM vault_user
+INNER JOIN user_game ON vault_user.user_id = user_game.user_id
+INNER JOIN game ON user_game.game_id = game.game_id
+WHERE vault_user.user_id = 5;
+
+-- 6. Show all games along with their respective genres
+SELECT game.game_id, game.title, GROUP_CONCAT(genre.genre_name ORDER BY genre.genre_name separator ', ') AS my_genre
+FROM game
+INNER JOIN game_genre ON game.game_id = game_genre.game_id
+INNER JOIN genre ON game_genre.genre_id = genre.genre_id
+GROUP BY game.game_id, game.title;
+
+-- Drop the view_user_game_history if already exists
+DROP VIEW IF EXISTS view_user_game_history;
+
+-- A view that shows the game history for every user
+CREATE VIEW view_user_game_history AS
+SELECT vault_user.user_id, vault_user.username, game.title
+FROM vault_user
+INNER JOIN user_game ON vault_user.user_id = user_game.user_id
+INNER JOIN game ON user_game.game_id = game.game_id;
+
+SELECT * FROM view_user_game_history;
+
+-- Drop view_completed_games if already exists
+DROP VIEW IF EXISTS view_completed_games;
+
+-- A view that shows every user's completed games
+CREATE VIEW view_completed_games AS
+SELECT vault_user.user_id, vault_user.username, game.title, user_game.game_status
+FROM vault_user
+INNER JOIN user_game ON vault_user.user_id = user_game.user_id
+INNER JOIN game ON user_game.game_id = game.game_id
+WHERE user_game.game_status = 'Complete';
+
+SELECT * FROM view_completed_games;
+
+-- Drop view_popular_games;
+DROP VIEW IF EXISTS popular_games;
+
+-- A view that shows high rated games
+CREATE VIEW popular_games AS
+SELECT game_id, title, rating FROM game
+WHERE rating > 4.5
+ORDER BY rating DESC;
+
+SELECT * FROM popular_games;
+
+-- Drop view_game_and_genres
+DROP VIEW IF EXISTS view_game_and_genres;
+
+-- A view that shows games with their genres
+CREATE VIEW view_game_and_genres AS
+SELECT game.game_id, game.title, GROUP_CONCAT(genre.genre_name ORDER BY genre.genre_name separator ', ') AS my_genre
+FROM game
+INNER JOIN game_genre ON game.game_id = game_genre.game_id
+INNER JOIN genre ON game_genre.genre_id = genre.genre_id
+GROUP BY game.game_id, game.title;
+
+SELECT * FROM view_game_and_genres
+ORDER BY game_id;
