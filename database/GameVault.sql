@@ -43,7 +43,7 @@ DROP TABLE IF EXISTS publishers;
 
 CREATE TABLE publishers (
     publishers_id INT AUTO_INCREMENT PRIMARY KEY,
-    publishers_name VARCHAR(100) NOT NULL
+    publishers_name VARCHAR(100) NOT NULL UNIQUE
 );
 
 -- drop game table if already exists, else create it
@@ -127,7 +127,14 @@ VALUES ('SILENTRAMPXGE-'),
     ('RetroFury'),
     ('Thelunatic_2000'),
     ('EmberKnight'),
-    ('ZeroSpecter');
+    ('ZeroSpecter'),
+    ('NeonPhantom'),
+    ('CrimsonByte'),
+    ('FrostedNebula'),
+    ('IronPulse'),
+    ('MidnightNova'),
+    ('ByteRogue'),
+    ('StaticReaper');
 
 -- insert values into genre table
 INSERT INTO
@@ -150,7 +157,8 @@ VALUES ('Action'),
     ('Family'),
     ('Board Games'),
     ('Card'),
-    ('Educational');
+    ('Educational'),
+    ('Horror');
 
 -- insert values into platform table
 INSERT INTO
@@ -164,7 +172,17 @@ VALUES ('PlayStation 5'),
     ('PlayStation 3'),
     ('Xbox 360'),
     ('Linux'),
-    ('macOS');
+    ('macOS'),
+    ('Nintendo Wii'),
+    ('Nintendo Wii U'),
+    ('Nintendo 3DS'),
+    ('Nintendo DS'),
+    ('Playstation 2'),
+    ('Playstation Vita'),
+    ('PSP'),
+    ('iOS'),
+    ('Android'),
+    ('Google Stadia');
 
 -- insert values into developers table
 INSERT INTO
@@ -186,7 +204,7 @@ VALUES ('Rockstar North'),
     (
         'Sony Computer Entertainment America'
     ),
-    ('DONTNOT Entertainment'),
+    ('DONTNOD Entertainment'),
     ('Digital Extremes'),
     ('2K Marin'),
     ('2K China'),
@@ -214,23 +232,47 @@ VALUES ('Rockstar North'),
     ('Guerilla Games'),
     ('4A Games'),
     ('Feral Interactive'),
-    ('Nixxes');
+    ('Nixxes'),
+    ('Deep Silver'),
+    ('THQ');
 
 -- insert values into publishers table
 INSERT INTO
     publishers (publishers_name)
-VALUES ('2K Games'),
-    ('Aspyr'),
-    ('Rockstar Games'),
-    ('Bethesda Softworks'),
+VALUES ('Rockstar Games'),
+    ('CD PROJEKT RED'),
     ('Electronic Arts'),
     ('Valve'),
-    ('Akella'),
+    ('Square Enix'),
     ('Buka Entertainment'),
     ('NVIDIA'),
     ('CyberFront'),
-    ('Square Enix'),
-    ('CD PROJEKT RED');
+    ('Akella'),
+    ('Bethesda Softworks'),
+    ('2K Games'),
+    ('Aspyr'),
+    ('Feral Interactive'),
+    ('Activision Blizzard'),
+    ('Bungie'),
+    (
+        'Sony Interactive Entertainment'
+    ),
+    ('PlayStation PC'),
+    ('505 Games'),
+    ('Starbreeze'),
+    ('Microsoft Studios'),
+    ('Playdead'),
+    ('鱼俞'),
+    ('Headup Games'),
+    ('Spike Chunsoft'),
+    ('Re-Logic'),
+    ('Digital Extremes'),
+    ('Capcom'),
+    ('Take Two Interactive'),
+    ('Psyonix'),
+    ('Deep Silver'),
+    ('THQ'),
+    ('Sony Computer Entertainment');
 
 -- insert values into game table
 INSERT INTO
@@ -349,7 +391,7 @@ VALUES (
         '2013-03-25'
     ),
     (
-        'Grand Thef Auto IV',
+        'Grand Theft Auto IV',
         4.26,
         '2008-04-29'
     ),
@@ -632,5 +674,233 @@ VALUES (1, 6),
     (30, 2);
 
 -- insert values into game_developers table
-
+INSERT INTO
+    game_developers
+VALUES (1, 1),
+    (1, 2),
+    (2, 3),
+    (3, 4),
+    (4, 4),
+    (4, 5),
+    (5, 6),
+    (6, 4),
+    (6, 7),
+    (7, 4),
+    (7, 8),
+    (8, 9),
+    (9, 2),
+    (10, 10),
+    (10, 11),
+    (10, 12),
+    (11, 4),
+    (11, 7),
+    (12, 10),
+    (12, 13),
+    (12, 14),
+    (12, 15),
+    (13, 16),
+    (14, 17),
+    (14, 11),
+    (14, 18),
+    (14, 12),
+    (14, 19),
+    (15, 20),
+    (16, 21),
+    (17, 9),
+    (18, 22),
+    (18, 23),
+    (19, 24),
+    (19, 25),
+    (19, 26),
+    (20, 4),
+    (21, 27),
+    (21, 34),
+    (21, 29),
+    (21, 30),
+    (21, 31),
+    (21, 32),
+    (21, 33),
+    (22, 35),
+    (22, 3),
+    (23, 36),
+    (23, 37),
+    (23, 38),
+    (23, 39),
+    (24, 4),
+    (25, 28),
+    (25, 17),
+    (26, 1),
+    (27, 40),
+    (28, 41),
+    (29, 45),
+    (29, 46),
+    (30, 43),
+    (30, 44),
+    (30, 6);
 -- insert values into game_publishers table
+INSERT INTO
+    game_publishers
+VALUES (1, 1),
+    (2, 2),
+    (3, 3),
+    (3, 4),
+    (4, 4),
+    (5, 5),
+    (6, 4),
+    (6, 6),
+    (6, 7),
+    (6, 8),
+    (7, 3),
+    (7, 4),
+    (7, 9),
+    (8, 10),
+    (9, 1),
+    (10, 11),
+    (10, 12),
+    (11, 4),
+    (12, 11),
+    (12, 12),
+    (13, 5),
+    (13, 13),
+    (14, 11),
+    (14, 13),
+    (15, 14),
+    (15, 15),
+    (16, 16),
+    (16, 17),
+    (17, 10),
+    (18, 18),
+    (18, 19),
+    (19, 20),
+    (19, 21),
+    (19, 22),
+    (20, 4),
+    (21, 10),
+    (22, 2),
+    (23, 18),
+    (23, 23),
+    (23, 24),
+    (23, 25),
+    (24, 4),
+    (25, 26),
+    (26, 27),
+    (26, 1),
+    (26, 28),
+    (27, 29),
+    (28, 32),
+    (29, 30),
+    (29, 31),
+    (30, 5),
+    (30, 20),
+    (30, 13);
+
+-- Process For Database
+
+-- 1. A new user wants to sign up
+INSERT INTO vault_user (username) VALUES ('VERIFIEDCLXMPZZ');
+
+-- 2. The user wants to find games with a rating greater than 4
+SELECT game_id, title, rating
+FROM game
+WHERE
+    rating > 4.0
+ORDER BY game_id;
+
+-- 3. The user wants to add a game to their game library
+INSERT INTO
+    user_game (
+        user_id,
+        game_id,
+        game_status,
+        hours_played
+    )
+VALUES (21, 5, 'Backlog', 0);
+
+-- 4. The user starts playing the game
+UPDATE user_game
+SET
+    game_status = 'In Progress',
+    hours_played = hours_played + 10
+WHERE
+    user_id = 21
+    AND game_id = 5;
+
+-- 5. Show game history for one of the users
+SELECT vault_user.user_id, vault_user.username, game.title
+FROM
+    vault_user
+    INNER JOIN user_game ON vault_user.user_id = user_game.user_id
+    INNER JOIN game ON user_game.game_id = game.game_id
+WHERE
+    vault_user.user_id = 5;
+
+-- 6. Show all games along with their respective genres
+SELECT game.game_id, game.title, GROUP_CONCAT(
+        genre.genre_name
+        ORDER BY genre.genre_name separator ', '
+    ) AS my_genre
+FROM game
+    INNER JOIN game_genre ON game.game_id = game_genre.game_id
+    INNER JOIN genre ON game_genre.genre_id = genre.genre_id
+GROUP BY
+    game.game_id,
+    game.title;
+
+-- Drop the view_user_game_history if already exists
+DROP VIEW IF EXISTS view_user_game_history;
+
+-- A view that shows the game history for every user
+CREATE VIEW view_user_game_history AS
+SELECT vault_user.user_id, vault_user.username, game.title
+FROM
+    vault_user
+    INNER JOIN user_game ON vault_user.user_id = user_game.user_id
+    INNER JOIN game ON user_game.game_id = game.game_id;
+
+SELECT * FROM view_user_game_history;
+
+-- Drop view_completed_games if already exists
+DROP VIEW IF EXISTS view_completed_games;
+
+-- A view that shows every user's completed games
+CREATE VIEW view_completed_games AS
+SELECT vault_user.user_id, vault_user.username, game.title, user_game.game_status
+FROM
+    vault_user
+    INNER JOIN user_game ON vault_user.user_id = user_game.user_id
+    INNER JOIN game ON user_game.game_id = game.game_id
+WHERE
+    user_game.game_status = 'Complete';
+
+SELECT * FROM view_completed_games;
+
+-- Drop view_popular_games;
+DROP VIEW IF EXISTS popular_games;
+
+-- A view that shows high rated games
+CREATE VIEW popular_games AS
+SELECT game_id, title, rating
+FROM game
+WHERE
+    rating > 4.5
+ORDER BY rating DESC;
+
+SELECT * FROM popular_games;
+
+-- Drop view_game_and_genres
+DROP VIEW IF EXISTS view_game_and_genres;
+
+-- A view that shows games with their genres
+CREATE VIEW view_game_and_genres AS
+SELECT game.game_id, game.title, GROUP_CONCAT(
+        genre.genre_name
+        ORDER BY genre.genre_name separator ', '
+    ) AS my_genre
+FROM game
+    INNER JOIN game_genre ON game.game_id = game_genre.game_id
+    INNER JOIN genre ON game_genre.genre_id = genre.genre_id
+GROUP BY
+    game.game_id,
+    game.title;
+
+SELECT * FROM view_game_and_genres ORDER BY game_id;
