@@ -1,3 +1,5 @@
+![GameVault animated banner showing connections between SQL, genres, platforms, playtime, and library](gamevault-banner.gif)
+
 # GameVault
 
 A MySQL database project for organizing video games and tracking personal game libraries. GameVault connects games with genres, platforms, developers, and publishers, and records each user's play status and hours played.
